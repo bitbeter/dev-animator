@@ -2,17 +2,16 @@
 import {ParticleElement} from "@/components/ParticleElement";
 import {useInterval} from "ahooks";
 import {useState} from "react";
-import {Position} from "@/lib/models";
+import {Position, VirtualBox} from "@/lib/models";
 import {VirtualBoxElement} from "@/components/VirtualBoxElement";
 import {sample} from "lodash";
-
-const virtualBoxes = generateRandomPoints(10);
+import {virtualBoxes} from "@/app/virtualBoxes";
 
 export default function Home() {
     const particles = useParticles();
 
     return (
-        <div className="relative">
+        <div className="fixed">
             {particles.map((p) => <ParticleElement key={p.key} value={p}/>)}
             {virtualBoxes.map((p) => <VirtualBoxElement key={p.key} value={p}/>)}
         </div>
@@ -20,27 +19,22 @@ export default function Home() {
     );
 }
 
+function reposition(key: string, virtualBox: VirtualBox) {
+    const {x, y} = virtualBox;
+    const offset = 4;
+    return {x: x + offset, y: y + offset, key};
+}
+
 function useParticles() {
-    const [particles, setParticles] = useState(generateRandomPoints(10).map(({key}) => {
-        const {x, y} = sample(virtualBoxes)!;
-        return {key, x, y};
-    }));
+    const [particles, setParticles] = useState(genParticles(10).map(({key}) => reposition(key, sample(virtualBoxes)!)));
     useInterval(() => {
-        const newParticles: Position[] = particles.map(({key}) => {
-            const {x, y} = sample(virtualBoxes)!;
-            return {key, x, y};
-        });
-
-        console.table(virtualBoxes);
-        console.table(particles);
-
-        setParticles(newParticles);
+        setParticles(particles.map(({key}) => reposition(key, sample(virtualBoxes)!)));
     }, 2000)
 
     return particles;
 }
 
-function generateRandomPoints(n: number): Position[] {
+function genParticles(n: number): Position[] {
     const points: Position[] = [];
 
     for (let i = 0; i < n; i++) {
